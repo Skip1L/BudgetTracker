@@ -1,110 +1,96 @@
 ﻿using BudgetTracker.Web.Controllers;
 using BudgetTracker.Web.Data;
 using BudgetTracker.Web.Models;
+using BudgetTracker.Web.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace BudgetTracker.Web.Test;
 
 public class IncomeControllerTests
 {
-    private BudgetTrackerContext GetInMemoryContext()
-    {
-        var options = new DbContextOptionsBuilder<BudgetTrackerContext>()
-            .UseInMemoryDatabase(databaseName: System.Guid.NewGuid().ToString())
-            .Options;
+    private readonly Mock<IIncomeRepository> _mockIncomeRepo;
+    private readonly IncomeController _controller;
 
-        var context = new BudgetTrackerContext(options);
-        context.Database.EnsureCreated();
-        return context;
+    public IncomeControllerTests()
+    {
+        _mockIncomeRepo = new Mock<IIncomeRepository>();
+        _controller = new IncomeController(_mockIncomeRepo.Object);
     }
 
     [Fact]
-    public void GetIncomes_ReturnsIncomesForBudget()
+    public void GetIncomes_ReturnsAllIncomesForBudget()
     {
         // Arrange
-        var context = GetInMemoryContext();
-        context.Budgets.Add(new Budget { Id = 1, Name = "Test Budget", TotalAmount = 1000 });
-        context.Incomes.Add(new Income { Id = 2, BudgetId = 1, Amount = 300, Source = "Freelance" });
-        context.Incomes.Add(new Income { Id = 3, BudgetId = 1, Amount = 500, Source = "Freelance 1" });
-        context.SaveChanges();
-
-        var controller = new IncomeController(context);
+        _mockIncomeRepo.Setup(repo => repo.GetAllIncomes(1))
+            .Returns(new List<Income> { new Income { Id = 1, BudgetId = 1, Amount = 500 } });
 
         // Act
-        var result = controller.GetIncomes(1);
+        var result = _controller.GetIncomes(1);
 
         // Assert
-
-        Assert.Equal(2, result.Value!.Count());
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var incomes = Assert.IsType<List<Income>>(okResult.Value);
+        Assert.Single(incomes);
     }
 
     [Fact]
     public void GetIncome_ReturnsIncomeById()
     {
         // Arrange
-        var context = GetInMemoryContext();
-        context.Incomes.Add(new Income { Id = 1, BudgetId = 1, Amount = 500, Source = "Salary" });
-        context.SaveChanges();
-
-        var controller = new IncomeController(context);
+        var income = new Income { Id = 1, BudgetId = 1, Amount = 500 };
+        _mockIncomeRepo.Setup(repo => repo.GetIncomeById(1)).Returns(income);
 
         // Act
-        var result = controller.GetIncome(1);
+        var result = _controller.GetIncome(1);
 
         // Assert
-        Assert.Equal(1, result.Value.Id);
-        Assert.Equal(500, result.Value.Amount);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnValue = Assert.IsType<Income>(okResult.Value);
+        Assert.Equal(1, returnValue.Id);
     }
 
     [Fact]
-    public void CreateIncome_AddsNewIncome()
+    public void CreateIncome_ReturnsCreatedAtActionResult()
     {
         // Arrange
-        var context = GetInMemoryContext();
-        var controller = new IncomeController(context);
-        var newIncome = new Income { BudgetId = 1, Amount = 600, Source = "Contract" };
+        var newIncome = new Income { Id = 1, BudgetId = 1, Amount = 600 };
 
         // Act
-        controller.CreateIncome(newIncome);
+        var result = _controller.CreateIncome(newIncome);
 
         // Assert
-        Assert.Equal(600, context.Incomes.Find(1)!.Amount);
-        Assert.Equal(1, context.Incomes.Count());
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
+        var returnValue = Assert.IsType<Income>(createdAtActionResult.Value);
+        Assert.Equal(600, returnValue.Amount);
     }
 
     [Fact]
-    public void UpdateIncome_UpdatesExistingIncome()
+    public void UpdateIncome_ReturnsNoContent()
     {
         // Arrange
-        var context = GetInMemoryContext();
-        context.Incomes.Add(new Income { Id = 1, BudgetId = 1, CategoryId = 1, Amount = 500, Source = "Salary" });
-        context.SaveChanges();
-
-        var controller = new IncomeController(context);
-        var updatedIncome = new Income { Id = 1, BudgetId = 1, CategoryId = 1, Amount = 700, Source = "Updated Salary" };
+        var existingIncome = new Income { Id = 1, BudgetId = 1, Amount = 700 };
+        _mockIncomeRepo.Setup(repo => repo.GetIncomeById(1)).Returns(existingIncome);
 
         // Act
-        controller.UpdateIncome(1, updatedIncome);
+        var result = _controller.UpdateIncome(1, existingIncome);
 
         // Assert
-        Assert.Equal(700, context.Incomes.Find(1)!.Amount);
+        Assert.IsType<NoContentResult>(result);
     }
 
     [Fact]
-    public void DeleteIncome_RemovesIncome()
+    public void DeleteIncome_ReturnsNoContent()
     {
         // Arrange
-        var context = GetInMemoryContext();
-        context.Incomes.Add(new Income { Id = 1, BudgetId = 1, Amount = 500, Source = "Salary" });
-        context.SaveChanges();
-
-        var controller = new IncomeController(context);
+        var existingIncome = new Income { Id = 1, BudgetId = 1, Amount = 500 };
+        _mockIncomeRepo.Setup(repo => repo.GetIncomeById(1)).Returns(existingIncome);
 
         // Act
-        controller.DeleteIncome(1);
+        var result = _controller.DeleteIncome(1);
 
         // Assert
-        Assert.Empty(context.Incomes);
+        Assert.IsType<NoContentResult>(result);
     }
 }

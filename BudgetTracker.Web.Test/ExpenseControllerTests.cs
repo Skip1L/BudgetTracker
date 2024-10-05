@@ -1,67 +1,96 @@
 ﻿using BudgetTracker.Web.Controllers;
 using BudgetTracker.Web.Data;
 using BudgetTracker.Web.Models;
+using BudgetTracker.Web.Repositories;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace BudgetTracker.Web.Test;
 
 public class ExpenseControllerTests
 {
-    private BudgetTrackerContext GetContextWithData()
+    private readonly Mock<IExpenseRepository> _mockExpenseRepo;
+    private readonly ExpenseController _controller;
+
+    public ExpenseControllerTests()
     {
-        var options = new DbContextOptionsBuilder<BudgetTrackerContext>()
-            .UseInMemoryDatabase(databaseName: System.Guid.NewGuid().ToString())
-            .Options;
-
-        var context = new BudgetTrackerContext(options);
-
-        context.Budgets.Add(new Budget { Id = 1, Name = "Test Budget", TotalAmount = 1000 });
-        context.Expenses.Add(new Expense { Id = 1, BudgetId = 1, Description = "Test Expense", Amount = 100 });
-        context.SaveChanges();
-
-        return context;
+        _mockExpenseRepo = new Mock<IExpenseRepository>();
+        _controller = new ExpenseController(_mockExpenseRepo.Object);
     }
 
     [Fact]
     public void GetExpenses_ReturnsAllExpensesForBudget()
     {
         // Arrange
-        var context = GetContextWithData();
-        var controller = new ExpenseController(context);
+        _mockExpenseRepo.Setup(repo => repo.GetAllExpenses(1))
+            .Returns(new List<Expense> { new Expense { Id = 1, BudgetId = 1, Amount = 100 } });
 
         // Act
-        var result = controller.GetExpenses(1);
+        var result = _controller.GetExpenses(1);
 
         // Assert
-        Assert.Equal(1, result.Value.Count());
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var expenses = Assert.IsType<List<Expense>>(okResult.Value);
+        Assert.Single(expenses);
     }
 
     [Fact]
-    public void CreateExpense_AddsNewExpense()
+    public void GetExpense_ReturnsExpenseById()
     {
         // Arrange
-        var context = GetContextWithData();
-        var controller = new ExpenseController(context);
-        var newExpense = new Expense { BudgetId = 1, Description = "New Expense", Amount = 50 };
+        var expense = new Expense { Id = 1, BudgetId = 1, Amount = 100 };
+        _mockExpenseRepo.Setup(repo => repo.GetExpenseById(1)).Returns(expense);
 
         // Act
-        controller.CreateExpense(newExpense);
+        var result = _controller.GetExpense(1);
 
         // Assert
-        Assert.Equal(2, context.Expenses.Count());
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnValue = Assert.IsType<Expense>(okResult.Value);
+        Assert.Equal(1, returnValue.Id);
     }
 
     [Fact]
-    public void DeleteExpense_RemovesExpense()
+    public void CreateExpense_ReturnsCreatedAtActionResult()
     {
         // Arrange
-        var context = GetContextWithData();
-        var controller = new ExpenseController(context);
+        var newExpense = new Expense { Id = 1, BudgetId = 1, Amount = 200 };
 
         // Act
-        controller.DeleteExpense(1);
+        var result = _controller.CreateExpense(newExpense);
 
         // Assert
-        Assert.Empty(context.Expenses);
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
+        var returnValue = Assert.IsType<Expense>(createdAtActionResult.Value);
+        Assert.Equal(200, returnValue.Amount);
+    }
+
+    [Fact]
+    public void UpdateExpense_ReturnsNoContent()
+    {
+        // Arrange
+        var existingExpense = new Expense { Id = 1, BudgetId = 1, Amount = 300 };
+        _mockExpenseRepo.Setup(repo => repo.GetExpenseById(1)).Returns(existingExpense);
+
+        // Act
+        var result = _controller.UpdateExpense(1, existingExpense);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public void DeleteExpense_ReturnsNoContent()
+    {
+        // Arrange
+        var existingExpense = new Expense { Id = 1, BudgetId = 1, Amount = 100 };
+        _mockExpenseRepo.Setup(repo => repo.GetExpenseById(1)).Returns(existingExpense);
+
+        // Act
+        var result = _controller.DeleteExpense(1);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
     }
 }

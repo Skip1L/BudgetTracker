@@ -1,12 +1,14 @@
 ﻿using BudgetTracker.Web.Controllers;
 using BudgetTracker.Web.Data;
 using BudgetTracker.Web.Models;
+using BudgetTracker.Web.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace BudgetTracker.Web.Test;
 
-public class CategoryControllerTests
+/*public class CategoryControllerTests
 {
     private BudgetTrackerContext GetInMemoryContext()
     {
@@ -111,5 +113,92 @@ public class CategoryControllerTests
         // Assert
         Assert.IsType<NoContentResult>(result);
         Assert.Empty(context.Categories);
+    }
+}*/
+
+public class CategoryControllerTests
+{
+    private readonly Mock<ICategoryRepository> _mockCategoryRepo;
+    private readonly CategoryController _controller;
+
+    public CategoryControllerTests()
+    {
+        _mockCategoryRepo = new Mock<ICategoryRepository>();
+        _controller = new CategoryController(_mockCategoryRepo.Object);
+    }
+
+    [Fact]
+    public void GetCategories_ReturnsAllCategories()
+    {
+        // Arrange
+        _mockCategoryRepo.Setup(repo => repo.GetAllCategories())
+            .Returns(new List<Category> { new Category { Id = 1, Name = "Food" } });
+
+        // Act
+        var result = _controller.GetCategories();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var categories = Assert.IsType<List<Category>>(okResult.Value);
+        Assert.Single(categories);
+    }
+
+    [Fact]
+    public void GetCategory_ReturnsCategoryById()
+    {
+        // Arrange
+        var category = new Category { Id = 1, Name = "Food" };
+        _mockCategoryRepo.Setup(repo => repo.GetCategoryById(1)).Returns(category);
+
+        // Act
+        var result = _controller.GetCategory(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnValue = Assert.IsType<Category>(okResult.Value);
+        Assert.Equal(1, returnValue.Id);
+    }
+
+    [Fact]
+    public void CreateCategory_ReturnsCreatedAtActionResult()
+    {
+        // Arrange
+        var newCategory = new Category { Id = 1, Name = "Transport" };
+
+        // Act
+        var result = _controller.CreateCategory(newCategory);
+
+        // Assert
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
+        var returnValue = Assert.IsType<Category>(createdAtActionResult.Value);
+        Assert.Equal("Transport", returnValue.Name);
+    }
+
+    [Fact]
+    public void UpdateCategory_ReturnsNoContent()
+    {
+        // Arrange
+        var existingCategory = new Category { Id = 1, Name = "Updated Category" };
+        _mockCategoryRepo.Setup(repo => repo.GetCategoryById(1)).Returns(existingCategory);
+
+        // Act
+        var result = _controller.UpdateCategory(1, existingCategory);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public void DeleteCategory_ReturnsNoContent()
+    {
+        // Arrange
+        var existingCategory = new Category { Id = 1, Name = "Food" };
+        _mockCategoryRepo.Setup(repo => repo.GetCategoryById(1)).Returns(existingCategory);
+
+        // Act
+        var result = _controller.DeleteCategory(1);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
     }
 }
