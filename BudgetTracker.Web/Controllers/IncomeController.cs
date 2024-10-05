@@ -1,11 +1,9 @@
 ﻿// Controllers/IncomeController.cs
-using BudgetTracker.Web.Data;
+using BudgetTracker.Web.Repositories;
 using BudgetTracker.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace BudgetTracker.Web.Controllers
 {
@@ -14,76 +12,57 @@ namespace BudgetTracker.Web.Controllers
     [Route("api/[controller]")]
     public class IncomeController : ControllerBase
     {
-        private readonly BudgetTrackerContext _context;
+        private readonly IIncomeRepository _incomeRepository;
 
-        public IncomeController(BudgetTrackerContext context)
+        public IncomeController(IIncomeRepository incomeRepository)
         {
-            _context = context;
+            _incomeRepository = incomeRepository;
         }
 
         // Get all incomes for a budget
         [HttpGet("{budgetId}")]
         public ActionResult<IEnumerable<Income>> GetIncomes(int budgetId)
         {
-            return _context.Incomes.Where(i => i.BudgetId == budgetId).ToList();
+            var incomes = _incomeRepository.GetAllIncomes(budgetId);
+            return Ok(incomes);
         }
 
         // Get income by ID
         [HttpGet("{id:int}")]
         public ActionResult<Income> GetIncome(int id)
         {
-            var income = _context.Incomes.Find(id);
+            var income = _incomeRepository.GetIncomeById(id);
             if (income == null) return NotFound();
-            return income;
+            return Ok(income);
         }
 
         // Create a new income
         [HttpPost]
         public IActionResult CreateIncome([FromBody] Income income)
         {
-            if (income == null)
-                return BadRequest();
-
-            _context.Incomes.Add(income);
-            _context.SaveChanges();
+            _incomeRepository.AddIncome(income);
             return CreatedAtAction(nameof(GetIncome), new { id = income.Id }, income);
         }
 
-        // Update an existing income
+        // Update income
         [HttpPut("{id:int}")]
-        public IActionResult UpdateIncome(int id, [FromBody] Income updatedIncome)
+        public IActionResult UpdateIncome(int id, [FromBody] Income income)
         {
-            // Find the existing income by ID
-            var existingIncome = _context.Incomes.Find(id);
+            var existingIncome = _incomeRepository.GetIncomeById(id);
+            if (existingIncome == null) return NotFound();
 
-            // If income is not found, return 404
-            if (existingIncome == null)
-            {
-                return NotFound();
-            }
-
-            // Update the fields manually
-            existingIncome.Amount = updatedIncome.Amount;
-            existingIncome.Source = updatedIncome.Source;
-            existingIncome.CategoryId = updatedIncome.CategoryId;
-            existingIncome.Date = updatedIncome.Date;
-
-            // Save changes to the database
-            _context.SaveChanges();
-
-            return NoContent(); // Return 204 No Content
+            _incomeRepository.UpdateIncome(income);
+            return NoContent();
         }
 
-        // Delete an income
+        // Delete income
         [HttpDelete("{id:int}")]
         public IActionResult DeleteIncome(int id)
         {
-            var income = _context.Incomes.Find(id);
-            if (income == null)
-                return NotFound();
+            var income = _incomeRepository.GetIncomeById(id);
+            if (income == null) return NotFound();
 
-            _context.Incomes.Remove(income);
-            _context.SaveChanges();
+            _incomeRepository.DeleteIncome(id);
             return NoContent();
         }
     }

@@ -1,59 +1,56 @@
-﻿using BudgetTracker.Web.Data;
+﻿// Controllers/BudgetController.cs
+using BudgetTracker.Web.Repositories;
 using BudgetTracker.Web.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace BudgetTracker.Web.Controllers
 {
     [Authorize]
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class BudgetController : ControllerBase
     {
-        private readonly BudgetTrackerContext _context;
+        private readonly IBudgetRepository _budgetRepository;
 
-        public BudgetController(BudgetTrackerContext context)
+        public BudgetController(IBudgetRepository budgetRepository)
         {
-            _context = context;
+            _budgetRepository = budgetRepository;
         }
 
         // Get all budgets
         [HttpGet]
         public ActionResult<IEnumerable<Budget>> GetBudgets()
         {
-            return _context.Budgets.Include(b => b.Expenses).ToList(); // Include expenses
+            return Ok(_budgetRepository.GetAllBudgets());
         }
 
         // Get budget by ID
         [HttpGet("{id}")]
         public ActionResult<Budget> GetBudget(int id)
         {
-            var budget = _context.Budgets.Include(b => b.Expenses).FirstOrDefault(b => b.Id == id);
+            var budget = _budgetRepository.GetBudgetById(id);
             if (budget == null) return NotFound();
-            return budget;
+            return Ok(budget);
         }
 
+        // Create a new budget
         [HttpPost]
         public IActionResult CreateBudget([FromBody] Budget budget)
         {
-            _context.Budgets.Add(budget);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetBudgets), new { id = budget.Id }, budget);
+            _budgetRepository.AddBudget(budget);
+            return CreatedAtAction(nameof(GetBudget), new { id = budget.Id }, budget);
         }
 
         // Update budget
         [HttpPut("{id}")]
         public IActionResult UpdateBudget(int id, [FromBody] Budget budget)
         {
-            var existingBudget = _context.Budgets.FirstOrDefault(b => b.Id == id);
+            var existingBudget = _budgetRepository.GetBudgetById(id);
             if (existingBudget == null) return NotFound();
 
-            existingBudget.Name = budget.Name;
-            existingBudget.TotalAmount = budget.TotalAmount;
-
-            _context.SaveChanges();
+            _budgetRepository.UpdateBudget(budget);
             return NoContent();
         }
 
@@ -61,13 +58,11 @@ namespace BudgetTracker.Web.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteBudget(int id)
         {
-            var budget = _context.Budgets.FirstOrDefault(b => b.Id == id);
+            var budget = _budgetRepository.GetBudgetById(id);
             if (budget == null) return NotFound();
 
-            _context.Budgets.Remove(budget);
-            _context.SaveChanges();
+            _budgetRepository.DeleteBudget(id);
             return NoContent();
         }
-
     }
 }

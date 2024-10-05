@@ -1,11 +1,9 @@
 ﻿// Controllers/CategoryController.cs
-using BudgetTracker.Web.Data;
+using BudgetTracker.Web.Repositories;
 using BudgetTracker.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace BudgetTracker.Web.Controllers
 {
@@ -14,25 +12,25 @@ namespace BudgetTracker.Web.Controllers
     [Route("api/[controller]")]
     public class CategoryController : ControllerBase
     {
-        private readonly BudgetTrackerContext _context;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public CategoryController(BudgetTrackerContext context)
+        public CategoryController(ICategoryRepository categoryRepository)
         {
-            _context = context;
+            _categoryRepository = categoryRepository;
         }
 
         // Get all categories
         [HttpGet]
         public ActionResult<IEnumerable<Category>> GetCategories()
         {
-            return _context.Categories.ToList();
+            return Ok(_categoryRepository.GetAllCategories());
         }
 
         // Get category by ID
         [HttpGet("{id}")]
         public ActionResult<Category> GetCategory(int id)
         {
-            var category = _context.Categories.Find(id);
+            var category = _categoryRepository.GetCategoryById(id);
             if (category == null) return NotFound();
             return Ok(category);
         }
@@ -41,47 +39,29 @@ namespace BudgetTracker.Web.Controllers
         [HttpPost]
         public IActionResult CreateCategory([FromBody] Category category)
         {
-            if (category == null)
-                return BadRequest();
-
-            _context.Categories.Add(category);
-            _context.SaveChanges();
+            _categoryRepository.AddCategory(category);
             return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
         }
 
-        // Update an existing category
+        // Update category
         [HttpPut("{id}")]
-        public IActionResult UpdateCategory(int id, [FromBody] Category updatedCategory)
+        public IActionResult UpdateCategory(int id, [FromBody] Category category)
         {
-            // Find the existing category by ID
-            var existingCategory = _context.Categories.Find(id);
+            var existingCategory = _categoryRepository.GetCategoryById(id);
+            if (existingCategory == null) return NotFound();
 
-            // If category is not found, return 404
-            if (existingCategory == null)
-            {
-                return NotFound();
-            }
-
-            // Update the fields manually
-            existingCategory.Name = updatedCategory.Name;
-            existingCategory.Description = updatedCategory.Description;
-
-            // Save changes to the database
-            _context.SaveChanges();
-
-            return NoContent(); // Return 204 No Content
+            _categoryRepository.UpdateCategory(category);
+            return NoContent();
         }
 
         // Delete category
         [HttpDelete("{id}")]
         public IActionResult DeleteCategory(int id)
         {
-            var category = _context.Categories.Find(id);
-            if (category == null)
-                return NotFound();
+            var category = _categoryRepository.GetCategoryById(id);
+            if (category == null) return NotFound();
 
-            _context.Categories.Remove(category);
-            _context.SaveChanges();
+            _categoryRepository.DeleteCategory(id);
             return NoContent();
         }
     }
