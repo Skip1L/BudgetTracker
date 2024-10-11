@@ -1,4 +1,6 @@
 // Models/Expense.cs
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
 namespace BudgetTracker.Web.Models
 {
     public class Expense
@@ -11,7 +13,9 @@ namespace BudgetTracker.Web.Models
         public DateTime Date { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
+        [ValidateNever]
         public Budget Budget { get; set; }
+        [ValidateNever]
         public Category Category { get; set; }
     }
 }

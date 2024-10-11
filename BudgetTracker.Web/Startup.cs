@@ -28,6 +28,8 @@ namespace BudgetTracker.Web
             services.AddScoped<BudgetService>();
             services.AddScoped<IncomeService>();
             services.AddScoped<CategoryService>();
+            // Register the BudgetNotificationService as a singleton
+            services.AddHostedService<BudgetNotificationService>();
 
             var key = Encoding.UTF8.GetBytes("YourSuperSecretKeyHereYourSuperSecretKeyHereYourSuperSecretKeyHereYourSuperSecretKeyHere");
             // JWT Authentication configuration
@@ -66,7 +68,14 @@ namespace BudgetTracker.Web
                     };*/
                 });
 
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                });
+
+            //services.AddControllers();
             services.AddDbContext<BudgetTrackerContext>(options =>
                 options.UseInMemoryDatabase("BudgetTrackerDB"));
 

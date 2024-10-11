@@ -13,5 +13,11 @@ namespace BudgetTracker.Web.SignalR
         {
             await Clients.All.SendAsync("ReceiveBudgetExceededNotification", message);
         }
+
+        // Send a notification to all connected clients
+        public async Task SendNotification(string message)
+        {
+            await Clients.All.SendAsync("ReceiveNotification", message);
+        }
     }
 }

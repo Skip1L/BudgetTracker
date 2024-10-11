@@ -1,8 +1,10 @@
 ﻿// Controllers/BudgetController.cs
 using BudgetTracker.Web.Repositories;
 using BudgetTracker.Web.Models;
+using BudgetTracker.Web.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Collections.Generic;
 
 namespace BudgetTracker.Web.Controllers
@@ -13,20 +15,20 @@ namespace BudgetTracker.Web.Controllers
     public class BudgetController : ControllerBase
     {
         private readonly IBudgetRepository _budgetRepository;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public BudgetController(IBudgetRepository budgetRepository)
+        public BudgetController(IBudgetRepository budgetRepository, IHubContext<NotificationHub> hubContext)
         {
             _budgetRepository = budgetRepository;
+            _hubContext = hubContext;
         }
 
-        // Get all budgets
         [HttpGet]
         public ActionResult<IEnumerable<Budget>> GetBudgets()
         {
             return Ok(_budgetRepository.GetAllBudgets());
         }
 
-        // Get budget by ID
         [HttpGet("{id}")]
         public ActionResult<Budget> GetBudget(int id)
         {
@@ -35,15 +37,17 @@ namespace BudgetTracker.Web.Controllers
             return Ok(budget);
         }
 
-        // Create a new budget
         [HttpPost]
         public IActionResult CreateBudget([FromBody] Budget budget)
         {
             _budgetRepository.AddBudget(budget);
+
+            // Send a notification when a budget is created
+            _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Budget '{budget.Name}' has been created.");
+
             return CreatedAtAction(nameof(GetBudget), new { id = budget.Id }, budget);
         }
 
-        // Update budget
         [HttpPut("{id}")]
         public IActionResult UpdateBudget(int id, [FromBody] Budget budget)
         {
@@ -51,10 +55,13 @@ namespace BudgetTracker.Web.Controllers
             if (existingBudget == null) return NotFound();
 
             _budgetRepository.UpdateBudget(budget);
+
+            // Send a notification when a budget is updated
+            _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Budget '{budget.Name}' has been updated.");
+
             return NoContent();
         }
 
-        // Delete budget
         [HttpDelete("{id}")]
         public IActionResult DeleteBudget(int id)
         {
@@ -62,6 +69,10 @@ namespace BudgetTracker.Web.Controllers
             if (budget == null) return NotFound();
 
             _budgetRepository.DeleteBudget(id);
+
+            // Send a notification when a budget is deleted
+            _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Budget '{budget.Name}' has been deleted.");
+
             return NoContent();
         }
     }

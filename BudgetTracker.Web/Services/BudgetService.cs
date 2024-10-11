@@ -36,6 +36,12 @@ namespace BudgetTracker.Web.Services
             return _expenseRepository.GetAllExpenses(budgetId);
         }
 
+        // Get all expenses for a budget
+        public IEnumerable<Budget> GetAllBudget()
+        {
+            return _budgetRepository.GetAllBudgets();
+        }
+
         // Get all incomes for a budget
         public IEnumerable<Income> GetIncomesForBudget(int budgetId)
         {

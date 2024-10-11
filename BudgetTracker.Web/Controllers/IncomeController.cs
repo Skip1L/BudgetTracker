@@ -4,6 +4,8 @@ using BudgetTracker.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using BudgetTracker.Web.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
 namespace BudgetTracker.Web.Controllers
 {
@@ -13,14 +15,16 @@ namespace BudgetTracker.Web.Controllers
     public class IncomeController : ControllerBase
     {
         private readonly IIncomeRepository _incomeRepository;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public IncomeController(IIncomeRepository incomeRepository)
+        public IncomeController(IIncomeRepository incomeRepository, IHubContext<NotificationHub> hubContext)
         {
             _incomeRepository = incomeRepository;
+            _hubContext = hubContext;
         }
 
         // Get all incomes for a budget
-        [HttpGet("{budgetId}")]
+        [HttpGet("budget/{budgetId}")]
         public ActionResult<IEnumerable<Income>> GetIncomes(int budgetId)
         {
             var incomes = _incomeRepository.GetAllIncomes(budgetId);
@@ -41,6 +45,10 @@ namespace BudgetTracker.Web.Controllers
         public IActionResult CreateIncome([FromBody] Income income)
         {
             _incomeRepository.AddIncome(income);
+
+            // Send a notification when an income is created
+            _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Income '{income.Source}' of {income.Amount} has been added.");
+
             return CreatedAtAction(nameof(GetIncome), new { id = income.Id }, income);
         }
 
@@ -50,6 +58,9 @@ namespace BudgetTracker.Web.Controllers
         {
             var existingIncome = _incomeRepository.GetIncomeById(id);
             if (existingIncome == null) return NotFound();
+
+            // Send a notification when an income is updated
+            _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Income '{income.Source}' has been updated.");
 
             _incomeRepository.UpdateIncome(income);
             return NoContent();
@@ -61,6 +72,9 @@ namespace BudgetTracker.Web.Controllers
         {
             var income = _incomeRepository.GetIncomeById(id);
             if (income == null) return NotFound();
+
+            // Send a notification when an income is deleted
+            _hubContext.Clients.All.SendAsync("ReceiveNotification", $"Income '{income.Source}' has been deleted.");
 
             _incomeRepository.DeleteIncome(id);
             return NoContent();
