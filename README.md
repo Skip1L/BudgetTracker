@@ -1,6 +1,6 @@
 # Budget Tracker Application
 
-##Overview
+## Overview
 
 *BudgetTracker* is a personal budget tracking web application built using C#, ASP.NET Core, Entity Framework Core, SignalR for real-time notifications, and SQL Server for data storage. This application allows users to manage their budgets, track expenses and income, and receive real-time updates when certain conditions are met (e.g., budget exceeds a limit).
 Features
@@ -68,13 +68,13 @@ Update the appsettings.json file in the BudgetTracker.Web project with your SQL 
   ```
 The application should now be running at https://localhost:xxxx
 
-##API Endpoints
+## API Endpoints
 Here are some key API endpoints you can use to interact with the BudgetTracker application:
 
-###Budget Endpoints
-####Create a new budget:
-    - POST /api/budget
-    - Request Body:
+### Budget Endpoints
+#### Create a new budget:
+  - POST /api/budget
+  - Request Body:
    ```json
     {
       "name": "Monthly Budget",
@@ -82,16 +82,13 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
     }
    ```
 
-####Get all budgets:
-
+#### Get all budgets:
    -GET /api/budget
 
-####Get a budget by ID:
-
+#### Get a budget by ID:
   -GET /api/budget/{id}
 
-####Update a budget:
-
+#### Update a budget:
   - PUT /api/budget/{id}
   - Request Body:
 
@@ -102,15 +99,15 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
           "totalAmount": 5500
         }
     ```
-####Delete a budget:
+#### Delete a budget:
    - DELETE /api/budget/{id}
     
 
-###Expense Endpoints
+### Expense Endpoints
 
-####Create a new expense:
-    - POST /api/expense
-    - Request Body:
+#### Create a new expense:
+   - POST /api/expense
+   - Request Body:
 
   ```json
         {
@@ -121,15 +118,15 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
         }
   ```
 
-####Get all expenses for a budget:
-    - GET /api/expense/budget/{budgetId}
+#### Get all expenses for a budget:
+  - GET /api/expense/budget/{budgetId}
 
-####Get a specific expense by ID:
-    - GET /api/expense/{id}
+#### Get a specific expense by ID:
+  - GET /api/expense/{id}
 
-####Update an expense:
-    - PUT /api/expense/{id}
-    - Request Body:
+#### Update an expense:
+  - PUT /api/expense/{id}
+  - Request Body:
 
   ```json
         {
@@ -140,13 +137,13 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
           "categoryId": 2
         }
   ```
-####Delete an expense:
-    - DELETE /api/expense/{id}
+#### Delete an expense:
+  - DELETE /api/expense/{id}
 
-###Income Endpoints
-####Create a new income:
-    - POST /api/income
-    - Request Body:
+### Income Endpoints
+#### Create a new income:
+  - POST /api/income
+  - Request Body:
 
   ```json
     {
@@ -156,15 +153,15 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
       "categoryId": 2
     }
   ```
-####Get all incomes for a budget:
-    - GET /api/income/budget/{budgetId}
+#### Get all incomes for a budget:
+  - GET /api/income/budget/{budgetId}
 
-####Get a specific income by ID:
-    - GET /api/income/{id}
+#### Get a specific income by ID:
+  - GET /api/income/{id}
 
-####Update an income:
-    - PUT /api/income/{id}
-    - Request Body:
+#### Update an income:
+  - PUT /api/income/{id}
+  - Request Body:
 
   ```json
         {
@@ -175,28 +172,28 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
           "categoryId": 2
         }
   ```
-####Delete an income:
-    -DELETE /api/income/{id}
+#### Delete an income:
+  -DELETE /api/income/{id}
 
-###Category Endpoints
-####Create a new category:
-    - POST /api/category
-    - Request Body:
+### Category Endpoints
+#### Create a new category:
+  - POST /api/category
+  - Request Body:
 ```json
     {
       "name": "Groceries",
       "description": "Expenses related to groceries"
     }
 ```
-####Get all categories:
-    - GET /api/category
+#### Get all categories:
+  - GET /api/category
 
-####Get a specific category by ID:
-    - GET /api/category/{id}
+#### Get a specific category by ID:
+  - GET /api/category/{id}
 
-####Update a category:
-    - PUT /api/category/{id}
-    - Request Body:
+#### Update a category:
+  - PUT /api/category/{id}
+  - Request Body:
 
   ```json
 
@@ -206,10 +203,10 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
           "description": "Updated description for groceries"
         }
   ```
-####Delete a category:
-    - DELETE /api/category/{id}
+#### Delete a category:
+  - DELETE /api/category/{id}
 
-##Real-time Notifications
+## Real-time Notifications
 
 This application uses SignalR to send real-time notifications when specific events occur, such as:
 
@@ -219,12 +216,12 @@ This application uses SignalR to send real-time notifications when specific even
 
 Clients can connect to the SignalR hub at /notificationHub and listen for updates.
 
-##Unit Testing
+## Unit Testing
 
 The application includes unit tests for controllers and services using xUnit and Moq. The tests can be found in the BudgetTracker.Web.Test project.
 Running Unit Tests
 
-To run the tests:
+### To run the tests:
   ```bash
   dotnet test
   ```
