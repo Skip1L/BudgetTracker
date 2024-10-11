@@ -83,10 +83,10 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
    ```
 
 #### Get all budgets:
-   -GET /api/budget
+  - GET /api/budget
 
 #### Get a budget by ID:
-  -GET /api/budget/{id}
+  - GET /api/budget/{id}
 
 #### Update a budget:
   - PUT /api/budget/{id}
@@ -173,7 +173,7 @@ Here are some key API endpoints you can use to interact with the BudgetTracker a
         }
   ```
 #### Delete an income:
-  -DELETE /api/income/{id}
+  - DELETE /api/income/{id}
 
 ### Category Endpoints
 #### Create a new category:
