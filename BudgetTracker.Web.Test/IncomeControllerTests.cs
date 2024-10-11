@@ -2,7 +2,9 @@
 using BudgetTracker.Web.Data;
 using BudgetTracker.Web.Models;
 using BudgetTracker.Web.Repositories;
+using BudgetTracker.Web.SignalR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -11,12 +13,18 @@ namespace BudgetTracker.Web.Test;
 public class IncomeControllerTests
 {
     private readonly Mock<IIncomeRepository> _mockIncomeRepo;
+    private readonly Mock<IHubContext<NotificationHub>> _mockHubContext;
+    private readonly Mock<IClientProxy> _mockClients;
     private readonly IncomeController _controller;
 
     public IncomeControllerTests()
     {
         _mockIncomeRepo = new Mock<IIncomeRepository>();
-        _controller = new IncomeController(_mockIncomeRepo.Object);
+        _mockHubContext = new Mock<IHubContext<NotificationHub>>();
+        _mockClients = new Mock<IClientProxy>();
+
+        _mockHubContext.Setup(hub => hub.Clients.All).Returns(_mockClients.Object);
+        _controller = new IncomeController(_mockIncomeRepo.Object, _mockHubContext.Object);
     }
 
     [Fact]
@@ -52,10 +60,10 @@ public class IncomeControllerTests
     }
 
     [Fact]
-    public void CreateIncome_ReturnsCreatedAtActionResult()
+    public void CreateIncome_SendsNotification()
     {
         // Arrange
-        var newIncome = new Income { Id = 1, BudgetId = 1, Amount = 600 };
+        var newIncome = new Income { Id = 1, BudgetId = 1, Amount = 600, Source = "Freelance" };
 
         // Act
         var result = _controller.CreateIncome(newIncome);
@@ -63,14 +71,19 @@ public class IncomeControllerTests
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
         var returnValue = Assert.IsType<Income>(createdAtActionResult.Value);
-        Assert.Equal(600, returnValue.Amount);
+
+        // Verify that the notification was sent
+        _mockClients.Verify(clients => clients.SendCoreAsync(
+            "ReceiveNotification",
+            It.Is<object[]>(o => o[0].ToString() == "Income 'Freelance' of 600 has been added."),
+            default), Times.Once);
     }
 
     [Fact]
     public void UpdateIncome_ReturnsNoContent()
     {
         // Arrange
-        var existingIncome = new Income { Id = 1, BudgetId = 1, Amount = 700 };
+        var existingIncome = new Income { Id = 1, BudgetId = 1, Amount = 700, Source = "Freelance" };
         _mockIncomeRepo.Setup(repo => repo.GetIncomeById(1)).Returns(existingIncome);
 
         // Act
@@ -78,13 +91,19 @@ public class IncomeControllerTests
 
         // Assert
         Assert.IsType<NoContentResult>(result);
+
+        // Verify that the notification was sent
+        _mockClients.Verify(clients => clients.SendCoreAsync(
+            "ReceiveNotification",
+            It.Is<object[]>(o => o[0].ToString() == "Income 'Freelance' has been updated."),
+            default), Times.Once);
     }
 
     [Fact]
     public void DeleteIncome_ReturnsNoContent()
     {
         // Arrange
-        var existingIncome = new Income { Id = 1, BudgetId = 1, Amount = 500 };
+        var existingIncome = new Income { Id = 1, BudgetId = 1, Amount = 500, Source = "Freelance" };
         _mockIncomeRepo.Setup(repo => repo.GetIncomeById(1)).Returns(existingIncome);
 
         // Act
@@ -92,5 +111,11 @@ public class IncomeControllerTests
 
         // Assert
         Assert.IsType<NoContentResult>(result);
+
+        // Verify that the notification was sent
+        _mockClients.Verify(clients => clients.SendCoreAsync(
+            "ReceiveNotification",
+            It.Is<object[]>(o => o[0].ToString() == "Income 'Freelance' has been deleted."),
+            default), Times.Once);
     }
 }
