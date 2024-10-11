@@ -44,6 +44,12 @@ namespace BudgetTracker.Web.Repositories
         // Update an existing category
         public void UpdateCategory(Category category)
         {
+            var trackedEntity = _context.Categories.Local.FirstOrDefault(b => b.Id == category.Id);
+            if (trackedEntity != null)
+            {
+                _context.Entry(trackedEntity).State = EntityState.Detached;
+            }
+
             _context.Categories.Update(category);
             _context.SaveChanges();
         }

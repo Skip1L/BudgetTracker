@@ -30,12 +30,15 @@ namespace BudgetTracker.Web.Repositories
         {
             return _context.Incomes
                 .Include(i => i.Category)
-                .FirstOrDefault(i => i.Id == id);
+                .FirstOrDefault(i => i.Id == id)!;
         }
 
         // Add a new income
         public void AddIncome(Income income)
         {
+            income.Budget = _context.Budgets.FirstOrDefault(budget => budget.Id == income.BudgetId)!;
+            income.Category = _context.Categories.FirstOrDefault(category => category.Id == income.CategoryId)!;
+
             _context.Incomes.Add(income);
             _context.SaveChanges();
         }
@@ -43,6 +46,12 @@ namespace BudgetTracker.Web.Repositories
         // Update an existing income
         public void UpdateIncome(Income income)
         {
+            var trackedEntity = _context.Incomes.Local.FirstOrDefault(b => b.Id == income.Id);
+            if (trackedEntity != null)
+            {
+                _context.Entry(trackedEntity).State = EntityState.Detached;
+            }
+
             _context.Incomes.Update(income);
             _context.SaveChanges();
         }

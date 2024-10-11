@@ -1,6 +1,7 @@
 ﻿// Repositories/BudgetRepository.cs
 using BudgetTracker.Web.Data;
 using BudgetTracker.Web.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -33,6 +34,14 @@ namespace BudgetTracker.Web.Repositories
 
         public void UpdateBudget(Budget budget)
         {
+            // Check if the entity is already tracked and detach it
+            var trackedEntity = _context.Budgets.Local.FirstOrDefault(b => b.Id == budget.Id);
+            if (trackedEntity != null)
+            {
+                _context.Entry(trackedEntity).State = EntityState.Detached;
+            }
+
+            // Update the budget
             _context.Budgets.Update(budget);
             _context.SaveChanges();
         }
