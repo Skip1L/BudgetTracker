@@ -3,7 +3,8 @@
 ## Overview
 
 *BudgetTracker* is a personal budget tracking web application built using C#, ASP.NET Core, Entity Framework Core, SignalR for real-time notifications, and SQL Server for data storage. This application allows users to manage their budgets, track expenses and income, and receive real-time updates when certain conditions are met (e.g., budget exceeds a limit).
-Features
+
+## Features
 
 - **User Authentication**: Manage user authentication and authorization using JWT tokens
 - **Budget Management**: Create, update, and delete budgets
